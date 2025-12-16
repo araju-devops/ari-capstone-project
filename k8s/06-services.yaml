@@ -1,0 +1,63 @@
+---
+# PostgreSQL Service (internal only)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: microservices-app
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+
+---
+# Backend-A Service (internal only)
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-a-service
+  namespace: microservices-app
+spec:
+  type: ClusterIP
+  selector:
+    app: backend-a
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+
+---
+# Backend-B Service (internal only)
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-b-service
+  namespace: microservices-app
+spec:
+  type: ClusterIP
+  selector:
+    app: backend-b
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+
+---
+# Frontend Service (external access)
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: microservices-app
+spec:
+  type: LoadBalancer  # Use NodePort if LoadBalancer not available
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
