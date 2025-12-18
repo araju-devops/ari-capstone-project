@@ -6,7 +6,7 @@ metadata:
 data:
   DB_HOST: "postgres-service"
   DB_PORT: "5432"
-  DB_NAME: "uploads"
+  DB_NAME: "capstone_db"
   init.sql: |
     CREATE TABLE IF NOT EXISTS requests (
       id SERIAL PRIMARY KEY,

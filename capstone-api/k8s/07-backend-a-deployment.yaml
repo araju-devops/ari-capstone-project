@@ -4,7 +4,7 @@ metadata:
   name: backend-a
   namespace: microservices-app
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: backend-a
@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: backend-a
-        image: sugarbin22/backend-a:v1
+        image: acrcapstoneari123.azurecr.io/backend-a:v1
         ports:
         - containerPort: 8080
         env:
@@ -38,18 +38,18 @@ spec:
               key: DB_NAME
         - name: DB_USER
           valueFrom:
-            secretKeyRef:
+            configMapKeyRef:
               name: db-secret
               key: POSTGRES_USER
         - name: DB_PASSWORD
           valueFrom:
-            secretKeyRef:
+            configMapKeyRef:
               name: db-secret
               key: POSTGRES_PASSWORD
         resources:
           requests:
             memory: "128Mi"
-            cpu: "100m"
+            cpu: "10m"
           limits:
             memory: "256Mi"
             cpu: "200m"

@@ -6,9 +6,11 @@ function App() {
   const [selectedB, setSelectedB] = useState(null);
   const [response, setResponse] = useState(null);
 
-  // Use relative paths - nginx will route to the correct backend
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
+
   const getApiUrl = (target) => {
-    return `/api/${target}`;
+    // Returns something like "https://my-apim-gateway.azure-api.net/api/a"
+    return `${API_BASE_URL}/api/${target}`;
   };
 
   async function uploadTo(target) {

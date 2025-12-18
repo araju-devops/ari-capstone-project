@@ -1,0 +1,43 @@
+name: Deploy Frontend
+
+on:
+  push:
+    paths:
+      - 'capstone-ui/**' # Only runs when you change the UI
+    branches: [ main, master ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Login to ACR
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ secrets.ACR_LOGIN_SERVER }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+
+    - name: Build and Push Docker Image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./capstone-ui
+        push: true
+        tags: ${{ secrets.ACR_LOGIN_SERVER }}/frontend:${{ github.sha }}
+        # THIS LINE FIXES THE 503/CRASH ERRORS:
+        platforms: linux/amd64
+        build-args: |
+          REACT_APP_API_BASE_URL=http://52.252.239.21
+
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.WEBAPP_NAME }}
+        images: ${{ secrets.ACR_LOGIN_SERVER }}/frontend:${{ github.sha }}

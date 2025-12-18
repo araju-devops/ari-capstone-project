@@ -39,7 +39,7 @@ terraform/
 │   └── prod/
 Step 2.2: Define Resources (Key Configurations)
 
-Resource Groups: Create rg-capstone-dev, rg-capstone-qa, rg-capstone-prod.
+Resource Groups: Create ari-rg-capstone-dev, ari-rg-capstone-qa, ari-rg-capstone-prod.
 
 Database (PaaS): Provision azurerm_postgresql_server.
 

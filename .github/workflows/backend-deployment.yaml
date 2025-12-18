@@ -1,0 +1,62 @@
+name: Deploy Backends
+
+on:
+  push:
+    paths:
+      - 'capstone-api/**' # Runs when you change API code or Infra
+    branches: [ main, master ]
+
+jobs:
+  deploy-backends:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Login to ACR
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ secrets.ACR_LOGIN_SERVER }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+
+    # Build Backend A
+    - name: Build/Push Backend A
+      uses: docker/build-push-action@v4
+      with:
+        context: ./capstone-api/backend-a
+        push: true
+        tags: ${{ secrets.ACR_LOGIN_SERVER }}/backend-a:${{ github.sha }}
+        platforms: linux/amd64
+
+    # Build Backend B
+    - name: Build/Push Backend B
+      uses: docker/build-push-action@v4
+      with:
+        context: ./capstone-api/backend-b
+        push: true
+        tags: ${{ secrets.ACR_LOGIN_SERVER }}/backend-b:${{ github.sha }}
+        platforms: linux/amd64
+
+    # Connect to AKS and Deploy
+    - name: Set AKS Context
+      uses: azure/aks-set-context@v3
+      with:
+        resource-group: ${{ secrets.RESOURCE_GROUP }}
+        cluster-name: ${{ secrets.AKS_NAME }}
+
+    # This trick replaces the "latest" tag in your YAMLs with the specific commit SHA
+    - name: Deploy to Kubernetes
+      run: |
+        cd capstone-api/k8s
+        # Replace image names on the fly
+        sed -i "s|image: .*backend-a.*|image: ${{ secrets.ACR_LOGIN_SERVER }}/backend-a:${{ github.sha }}|g" 07-backend-a-deployment.yaml
+        sed -i "s|image: .*backend-b.*|image: ${{ secrets.ACR_LOGIN_SERVER }}/backend-b:${{ github.sha }}|g" 08-backend-b-deployment.yaml
+        
+        # Apply changes
+        kubectl apply -f .
