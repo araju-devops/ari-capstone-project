@@ -3,7 +3,7 @@ name: Deploy Frontend
 on:
   push:
     paths:
-      - 'capstone-ui/**' # Only runs when you change the UI
+      - 'capstone-ui/**'
     branches: [ main, master ]
 
 jobs:
@@ -31,12 +31,13 @@ jobs:
         context: ./capstone-ui
         push: true
         tags: ${{ secrets.ACR_LOGIN_SERVER }}/frontend:${{ github.sha }}
-        # THIS LINE FIXES THE 503/CRASH ERRORS:
+        # Forces the image to work on Azure Linux
         platforms: linux/amd64
+        # Replace this with your ACTUAL Load Balancer IP if it changes
         build-args: |
           REACT_APP_API_BASE_URL=http://52.252.239.21
 
-    - name: Deploy to Azure Web App
+    - name: Deploy to App Service
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ secrets.WEBAPP_NAME }}

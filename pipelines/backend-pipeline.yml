@@ -3,7 +3,8 @@ name: Deploy Backends
 on:
   push:
     paths:
-      - 'capstone-api/**' # Runs when you change API code or Infra
+      - 'capstone-api/**'
+      - '!capstone-api/terraform/**' # Don't run this when editing Terraform
     branches: [ main, master ]
 
 jobs:
@@ -43,18 +44,18 @@ jobs:
         tags: ${{ secrets.ACR_LOGIN_SERVER }}/backend-b:${{ github.sha }}
         platforms: linux/amd64
 
-    # Connect to AKS and Deploy
+    # Connect to AKS
     - name: Set AKS Context
       uses: azure/aks-set-context@v3
       with:
         resource-group: ${{ secrets.RESOURCE_GROUP }}
         cluster-name: ${{ secrets.AKS_NAME }}
 
-    # This trick replaces the "latest" tag in your YAMLs with the specific commit SHA
+    # Deploy to Kubernetes
     - name: Deploy to Kubernetes
       run: |
         cd capstone-api/k8s
-        # Replace image names on the fly
+        # Replace image names in YAMLs with the new version
         sed -i "s|image: .*backend-a.*|image: ${{ secrets.ACR_LOGIN_SERVER }}/backend-a:${{ github.sha }}|g" 07-backend-a-deployment.yaml
         sed -i "s|image: .*backend-b.*|image: ${{ secrets.ACR_LOGIN_SERVER }}/backend-b:${{ github.sha }}|g" 08-backend-b-deployment.yaml
         
