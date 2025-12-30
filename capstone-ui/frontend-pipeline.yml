@@ -1,44 +1,51 @@
-name: Deploy Frontend
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      # Adjusted to match the folder structure where Dockerfile lives
+      - ari-capstone-project/capstone-ui/**
 
-on:
-  push:
-    paths:
-      - 'capstone-ui/**'
-    branches: [ main, master ]
+pool:
+  vmImage: ubuntu-latest
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    
+variables:
+  azureSubscription: 'Ari-capstone-training'
+  webAppName: 'app-capstone-ui-dev-ari123'
+  acrName: 'acrcapstoneari123' 
+  imageRepository: 'frontend'
+  # ACTION REQUIRED: Update this with your actual Azure DevOps Service Connection name for ACR
+  dockerRegistryServiceConnection: 'Your_ACR_Service_Connection_Name' 
+
+stages:
+- stage: DEV
+  displayName: DEV - Frontend
+  jobs:
+  - job: FrontendDEV
+    displayName: Deploy Frontend DEV
     steps:
-    - uses: actions/checkout@v3
+    - checkout: self
 
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    # 1. Build and Push Docker Image (Contains Nginx + React Build)
+    - task: Docker@2
+      displayName: Build and Push to ACR
+      inputs:
+        command: buildAndPush
+        repository: $(imageRepository)
+        # Assumes the Dockerfile is inside the capstone-ui folder
+        dockerfile: '$(Build.SourcesDirectory)/ari-capstone-project/capstone-ui/Dockerfile'
+        buildContext: '$(Build.SourcesDirectory)/ari-capstone-project/capstone-ui'
+        containerRegistry: $(dockerRegistryServiceConnection)
+        tags: |
+          latest
+          $(Build.BuildId)
 
-    - name: Login to ACR
-      uses: docker/login-action@v2
-      with:
-        registry: ${{ secrets.ACR_LOGIN_SERVER }}
-        username: ${{ secrets.ACR_USERNAME }}
-        password: ${{ secrets.ACR_PASSWORD }}
-
-    - name: Build and Push Docker Image
-      uses: docker/build-push-action@v4
-      with:
-        context: ./capstone-ui
-        push: true
-        tags: ${{ secrets.ACR_LOGIN_SERVER }}/frontend:${{ github.sha }}
-        # Forces the image to work on Azure Linux
-        platforms: linux/amd64
-        # Replace this with your ACTUAL Load Balancer IP if it changes
-        build-args: |
-          REACT_APP_API_BASE_URL=http://52.252.239.21
-
-    - name: Deploy to App Service
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: ${{ secrets.WEBAPP_NAME }}
-        images: ${{ secrets.ACR_LOGIN_SERVER }}/frontend:${{ github.sha }}
+    # 2. Deploy Container to Azure Web App
+    - task: AzureWebApp@1
+      displayName: Deploy UI Container
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appName: $(webAppName)
+        # Tells Azure to pull the image we just pushed
+        containers: '$(acrName).azurecr.io/$(imageRepository):latest'
