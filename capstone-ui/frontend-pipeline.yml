@@ -11,12 +11,10 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  azureSubscription: 'Ari-capstone-training'
-  webAppName: 'app-capstone-ui-dev-ari123'
-  acrName: 'acrcapstoneari123' 
-  imageRepository: 'frontend'
-  # ACTION REQUIRED: Update this with your actual Azure DevOps Service Connection name for ACR
-  dockerRegistryServiceConnection: 'Your_ACR_Service_Connection_Name' 
+  azureSubscription: 'Ari-Terraform-Auth'
+  webAppName: 'app-capstone-ui-dev-ari999'
+  acrName: 'acrcapstoneari999'
+  imageRepository: 'frontend' 
 
 stages:
 - stage: DEV
@@ -27,25 +25,35 @@ stages:
     steps:
     - checkout: self
 
-    # 1. Build and Push Docker Image (Contains Nginx + React Build)
-    - task: Docker@2
+    # 1. Build and Push Docker Image using Azure CLI
+    - task: AzureCLI@2
       displayName: Build and Push to ACR
       inputs:
-        command: buildAndPush
-        repository: $(imageRepository)
-        # Assumes the Dockerfile is inside the capstone-ui folder
-        dockerfile: '$(Build.SourcesDirectory)/ari-capstone-project/capstone-ui/Dockerfile'
-        buildContext: '$(Build.SourcesDirectory)/ari-capstone-project/capstone-ui'
-        containerRegistry: $(dockerRegistryServiceConnection)
-        tags: |
-          latest
-          $(Build.BuildId)
+        azureSubscription: $(azureSubscription)
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          # Check current directory and list files
+          echo "Current directory: $(pwd)"
+          echo "Build.SourcesDirectory: $(Build.SourcesDirectory)"
+          ls -la
+
+          # Login to ACR
+          az acr login --name $(acrName)
+
+          # Build and tag the image from current directory (should contain Dockerfile)
+          docker build -t $(acrName).azurecr.io/$(imageRepository):latest \
+                       -t $(acrName).azurecr.io/$(imageRepository):$(Build.BuildId) \
+                       .
+
+          # Push both tags to ACR
+          docker push $(acrName).azurecr.io/$(imageRepository):latest
+          docker push $(acrName).azurecr.io/$(imageRepository):$(Build.BuildId)
 
     # 2. Deploy Container to Azure Web App
-    - task: AzureWebApp@1
+    - task: AzureWebAppContainer@1
       displayName: Deploy UI Container
       inputs:
         azureSubscription: $(azureSubscription)
         appName: $(webAppName)
-        # Tells Azure to pull the image we just pushed
-        containers: '$(acrName).azurecr.io/$(imageRepository):latest'
+        imageName: '$(acrName).azurecr.io/$(imageRepository):latest'
