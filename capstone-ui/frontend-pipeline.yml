@@ -1,0 +1,59 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      # Adjusted to match the folder structure where Dockerfile lives
+      - ari-capstone-project/capstone-ui/**
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  azureSubscription: 'Ari-Terraform-Auth'
+  webAppName: 'app-capstone-ui-dev-ari999'
+  acrName: 'acrcapstoneari999'
+  imageRepository: 'frontend' 
+
+stages:
+- stage: DEV
+  displayName: DEV - Frontend
+  jobs:
+  - job: FrontendDEV
+    displayName: Deploy Frontend DEV
+    steps:
+    - checkout: self
+
+    # 1. Build and Push Docker Image using Azure CLI
+    - task: AzureCLI@2
+      displayName: Build and Push to ACR
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          # Check current directory and list files
+          echo "Current directory: $(pwd)"
+          echo "Build.SourcesDirectory: $(Build.SourcesDirectory)"
+          ls -la
+
+          # Login to ACR
+          az acr login --name $(acrName)
+
+          # Build and tag the image from current directory (should contain Dockerfile)
+          docker build -t $(acrName).azurecr.io/$(imageRepository):latest \
+                       -t $(acrName).azurecr.io/$(imageRepository):$(Build.BuildId) \
+                       .
+
+          # Push both tags to ACR
+          docker push $(acrName).azurecr.io/$(imageRepository):latest
+          docker push $(acrName).azurecr.io/$(imageRepository):$(Build.BuildId)
+
+    # 2. Deploy Container to Azure Web App
+    - task: AzureWebAppContainer@1
+      displayName: Deploy UI Container
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appName: $(webAppName)
+        imageName: '$(acrName).azurecr.io/$(imageRepository):latest'
