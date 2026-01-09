@@ -110,12 +110,24 @@ stages:
           echo "Azure resource import phase complete (errors ignored if resources already in state)"
           set -e  # Re-enable exit on error
 
-          echo "Fixing corrupted Kubernetes resources in state..."
-          set +e  # Don't exit on error for state removal
-          terraform state rm module.k8s_addons.kubernetes_service.owasp_zap 2>/dev/null || echo "owasp_zap service not in state or already removed"
-          terraform state rm module.k8s_addons.kubernetes_service.trivy_server 2>/dev/null || echo "trivy_server service not in state or already removed"
-          terraform state rm module.k8s_addons.kubernetes_deployment.owasp_zap 2>/dev/null || echo "owasp_zap deployment not in state or already removed"
-          terraform state rm module.k8s_addons.kubernetes_deployment.trivy_server 2>/dev/null || echo "trivy_server deployment not in state or already removed"
+          echo "Fixing corrupted Kubernetes resources..."
+          set +e  # Don't exit on error
+
+          # Get AKS credentials
+          az aks get-credentials --resource-group $(aksResourceGroup) --name $(aksClusterName) --overwrite-existing
+
+          # Delete existing deployments and services from Kubernetes
+          kubectl delete deployment owasp-zap -n security --ignore-not-found=true
+          kubectl delete deployment trivy-server -n security --ignore-not-found=true
+          kubectl delete service owasp-zap -n security --ignore-not-found=true
+          kubectl delete service trivy-server -n security --ignore-not-found=true
+
+          # Remove from Terraform state
+          terraform state rm module.k8s_addons.kubernetes_service.owasp_zap 2>/dev/null || echo "owasp_zap service not in state"
+          terraform state rm module.k8s_addons.kubernetes_service.trivy_server 2>/dev/null || echo "trivy_server service not in state"
+          terraform state rm module.k8s_addons.kubernetes_deployment.owasp_zap 2>/dev/null || echo "owasp_zap deployment not in state"
+          terraform state rm module.k8s_addons.kubernetes_deployment.trivy_server 2>/dev/null || echo "trivy_server deployment not in state"
+
           set -e
 
           echo "Breaking any existing state locks before plan..."
