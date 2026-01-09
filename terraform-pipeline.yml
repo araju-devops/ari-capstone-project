@@ -13,6 +13,8 @@ variables:
   azureSubscription: 'Ari-Terraform-Auth'
   workingDirectory: 'environments/dev'
   acrLoginServer: 'acrcapstoneari999.azurecr.io'
+  aksResourceGroup: 'ari-rg-capstone-dev'
+  aksClusterName: 'aks-capstone-dev'
   backendRG: 'ari-terraform-storage-rg'
   backendStorageAccount: 'aristate12345'
   backendContainer: 'tfstate'
@@ -55,6 +57,15 @@ stages:
           export ARM_CLIENT_SECRET=$servicePrincipalKey
           export ARM_TENANT_ID=$tenantId
           export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+
+          echo "Getting AKS credentials for cleanup..."
+          az aks get-credentials --resource-group $(aksResourceGroup) --name $(aksClusterName) --overwrite-existing
+
+          echo "Cleaning up existing Kubernetes deployments..."
+          kubectl delete deployment owasp-zap -n security --ignore-not-found=true || echo "owasp-zap deployment not found"
+          kubectl delete deployment trivy-server -n security --ignore-not-found=true || echo "trivy-server deployment not found"
+          kubectl delete service owasp-zap -n security --ignore-not-found=true || echo "owasp-zap service not found"
+          kubectl delete service trivy-server -n security --ignore-not-found=true || echo "trivy-server service not found"
 
           echo "Cleaning up local state files..."
           rm -f terraform.tfstate*
@@ -110,24 +121,12 @@ stages:
           echo "Azure resource import phase complete (errors ignored if resources already in state)"
           set -e  # Re-enable exit on error
 
-          echo "Fixing corrupted Kubernetes resources..."
-          set +e  # Don't exit on error
-
-          # Get AKS credentials
-          az aks get-credentials --resource-group $(aksResourceGroup) --name $(aksClusterName) --overwrite-existing
-
-          # Delete existing deployments and services from Kubernetes
-          kubectl delete deployment owasp-zap -n security --ignore-not-found=true
-          kubectl delete deployment trivy-server -n security --ignore-not-found=true
-          kubectl delete service owasp-zap -n security --ignore-not-found=true
-          kubectl delete service trivy-server -n security --ignore-not-found=true
-
-          # Remove from Terraform state
+          echo "Removing corrupted resources from Terraform state..."
+          set +e  # Don't exit on error for state removal
           terraform state rm module.k8s_addons.kubernetes_service.owasp_zap 2>/dev/null || echo "owasp_zap service not in state"
           terraform state rm module.k8s_addons.kubernetes_service.trivy_server 2>/dev/null || echo "trivy_server service not in state"
           terraform state rm module.k8s_addons.kubernetes_deployment.owasp_zap 2>/dev/null || echo "owasp_zap deployment not in state"
           terraform state rm module.k8s_addons.kubernetes_deployment.trivy_server 2>/dev/null || echo "trivy_server deployment not in state"
-
           set -e
 
           echo "Breaking any existing state locks before plan..."
