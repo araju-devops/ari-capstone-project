@@ -38,15 +38,21 @@ stages:
           echo "Listing current directory:"
           ls -la
 
-          # Check if Dockerfile exists
-          if [ ! -f "Dockerfile" ]; then
-            echo "ERROR: Dockerfile not found in current directory"
-            echo "Checking if files are in a subdirectory..."
-            find . -name "Dockerfile" -type f
-            echo "All files in current directory:"
-            find . -type f | head -20
+          # Find the Dockerfile location
+          DOCKERFILE_PATH=$(find . -name "Dockerfile" -type f | head -1)
+          if [ -z "$DOCKERFILE_PATH" ]; then
+            echo "ERROR: Dockerfile not found anywhere in the repository"
             exit 1
           fi
+
+          # Get the directory containing the Dockerfile
+          DOCKERFILE_DIR=$(dirname "$DOCKERFILE_PATH")
+          echo "Found Dockerfile at: $DOCKERFILE_PATH"
+          echo "Changing to directory: $DOCKERFILE_DIR"
+          cd "$DOCKERFILE_DIR"
+
+          echo "Files in Dockerfile directory:"
+          ls -la
 
           # Login to ACR
           az acr login --name $(acrName)
