@@ -4,14 +4,14 @@ trigger:
       - main
   paths:
     include:
-      - terraform/**
+      - '**'
 
 pool:
   vmImage: ubuntu-latest
 
 variables:
   azureSubscription: 'Ari-Terraform-Auth'
-  workingDirectory: 'terraform/environments/dev'
+  workingDirectory: 'environments/dev'
   acrLoginServer: 'acrcapstoneari999.azurecr.io'
   backendRG: 'ari-terraform-storage-rg'
   backendStorageAccount: 'aristate12345'
