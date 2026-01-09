@@ -35,12 +35,23 @@ stages:
           # Check current directory and list files
           echo "Current directory: $(pwd)"
           echo "Build.SourcesDirectory: $(Build.SourcesDirectory)"
+          echo "Listing current directory:"
           ls -la
+
+          # Check if Dockerfile exists
+          if [ ! -f "Dockerfile" ]; then
+            echo "ERROR: Dockerfile not found in current directory"
+            echo "Checking if files are in a subdirectory..."
+            find . -name "Dockerfile" -type f
+            echo "All files in current directory:"
+            find . -type f | head -20
+            exit 1
+          fi
 
           # Login to ACR
           az acr login --name $(acrName)
 
-          # Build and tag the image from current directory (should contain Dockerfile)
+          # Build and tag the image from current directory
           docker build -t $(acrName).azurecr.io/$(imageRepository):latest \
                        -t $(acrName).azurecr.io/$(imageRepository):$(Build.BuildId) \
                        .
