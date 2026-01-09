@@ -4,8 +4,7 @@ trigger:
       - main
   paths:
     include:
-      # Adjusted to match the folder structure where Dockerfile lives
-      - ari-capstone-project/capstone-ui/**
+      - '**'
 
 pool:
   vmImage: ubuntu-latest
