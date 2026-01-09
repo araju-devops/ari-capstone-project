@@ -63,13 +63,7 @@ resource "azurerm_linux_web_app" "webapp" {
   name                = "app-capstone-ui-dev-${var.unique_id}"
   location            = "East US" 
   resource_group_name = azurerm_resource_group.rg.name
-  service_plan_id     = azurerm_service_plan.plan.id [cite: 5]
-
-  # --- ADD THIS BLOCK ---
-  app_settings = {
-    "WEBSITES_PORT" = "8080"
-  }
-  # ----------------------
+  service_plan_id     = azurerm_service_plan.plan.id
 
   site_config {
     always_on = false 
