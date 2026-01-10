@@ -11,7 +11,7 @@ pool:
 
 variables:
   azureSubscription: 'Ari-Terraform-Auth'
-  workingDirectory: 'environments/dev'
+  workingDirectory: 'terraform/environments/dev'
   acrLoginServer: 'acrcapstoneari999.azurecr.io'
   aksResourceGroup: 'ari-rg-capstone-dev'
   aksClusterName: 'aks-capstone-dev'
