@@ -5,6 +5,8 @@ function App() {
   const [selectedA, setSelectedA] = useState(null);
   const [selectedB, setSelectedB] = useState(null);
   const [response, setResponse] = useState(null);
+  const [loadingA, setLoadingA] = useState(false);
+  const [loadingB, setLoadingB] = useState(false);
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
 
@@ -25,15 +27,38 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
     }
 
     const form = new FormData();
-    if (target === "a") form.append("image", selectedA);
-    if (target === "b") form.append("image", selectedB);
+    if (target === "a") {
+      form.append("image", selectedA);
+      setLoadingA(true);
+    }
+    if (target === "b") {
+      form.append("image", selectedB);
+      setLoadingB(true);
+    }
 
     try {
-      const res = await fetch(getApiUrl(target), { method: "POST", body: form });
+      const apiUrl = getApiUrl(target);
+      console.log(`Uploading to: ${apiUrl}`);
+
+      const res = await fetch(apiUrl, { method: "POST", body: form });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+
       const data = await res.json();
-      setResponse(data);
+      setResponse({ success: true, target: target.toUpperCase(), data });
     } catch (error) {
-      setResponse({ error: error.message });
+      console.error('Upload error:', error);
+      setResponse({
+        success: false,
+        target: target.toUpperCase(),
+        error: error.message,
+        apiUrl: getApiUrl(target)
+      });
+    } finally {
+      if (target === 'a') setLoadingA(false);
+      if (target === 'b') setLoadingB(false);
     }
   }
 
@@ -44,14 +69,30 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
       <div className="grid">
         <div className="card">
           <h2>Backend A</h2>
-          <input type="file" onChange={(e) => setSelectedA(e.target.files[0])} />
-          <button onClick={() => uploadTo("a")}>Upload to A</button>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setSelectedA(e.target.files[0])}
+            disabled={loadingA}
+          />
+          <button onClick={() => uploadTo("a")} disabled={loadingA}>
+            {loadingA ? "Uploading..." : "Upload to A"}
+          </button>
+          {selectedA && <p className="file-info">Selected: {selectedA.name}</p>}
         </div>
 
         <div className="card">
           <h2>Backend B</h2>
-          <input type="file" onChange={(e) => setSelectedB(e.target.files[0])} />
-          <button onClick={() => uploadTo("b")}>Upload to B</button>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setSelectedB(e.target.files[0])}
+            disabled={loadingB}
+          />
+          <button onClick={() => uploadTo("b")} disabled={loadingB}>
+            {loadingB ? "Uploading..." : "Upload to B"}
+          </button>
+          {selectedB && <p className="file-info">Selected: {selectedB.name}</p>}
         </div>
       </div>
 

@@ -13,7 +13,9 @@ variables:
   azureSubscription: 'Ari-Terraform-Auth'
   webAppName: 'app-capstone-ui-dev-ari999'
   acrName: 'acrcapstoneari999'
-  imageRepository: 'frontend' 
+  imageRepository: 'frontend'
+  # IMPORTANT: Set this to your APIM gateway URL
+  apiBaseUrl: 'https://apim-capstone-dev-ari999.azure-api.net' 
 
 stages:
 - stage: DEV
@@ -58,7 +60,8 @@ stages:
           az acr login --name $(acrName)
 
           # Build and tag the image from current directory
-          docker build -t $(acrName).azurecr.io/$(imageRepository):latest \
+          docker build --build-arg REACT_APP_API_BASE_URL=$(apiBaseUrl) \
+                       -t $(acrName).azurecr.io/$(imageRepository):latest \
                        -t $(acrName).azurecr.io/$(imageRepository):$(Build.BuildId) \
                        .
 
