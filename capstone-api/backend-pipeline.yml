@@ -1,0 +1,305 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - 'backend-a/**'
+      - 'backend-b/**'
+      - 'db/**'
+      - 'k8s-azure/**'
+      - 'backend-pipeline.yml'
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  azureSubscription: 'Ari-Terraform-Auth'
+  acrName: 'acrcapstoneari999'
+  aksResourceGroup: 'ari-rg-capstone-dev'
+  aksClusterName: 'aks-capstone-dev'
+  namespace: 'microservices-app'
+
+stages:
+# ===================================================================
+# STAGE 1: BUILD - Build and push Docker images to ACR
+# ===================================================================
+- stage: Build
+  displayName: 'Build & Push Images'
+  jobs:
+  - job: BuildBackendA
+    displayName: 'Build Backend A'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Build & Push Backend A Image'
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          echo "========================================="
+          echo "Building Backend A Docker Image"
+          echo "========================================="
+
+          # Login to ACR
+          az acr login --name $(acrName)
+
+          # Build and tag the image
+          docker build -t $(acrName).azurecr.io/backend-a:latest \
+                       -t $(acrName).azurecr.io/backend-a:$(Build.BuildId) \
+                       ./backend-a
+
+          # Push both tags to ACR
+          docker push $(acrName).azurecr.io/backend-a:latest
+          docker push $(acrName).azurecr.io/backend-a:$(Build.BuildId)
+
+          echo "✅ Backend A image pushed successfully"
+          echo "   - $(acrName).azurecr.io/backend-a:latest"
+          echo "   - $(acrName).azurecr.io/backend-a:$(Build.BuildId)"
+
+  - job: BuildBackendB
+    displayName: 'Build Backend B'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Build & Push Backend B Image'
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          echo "========================================="
+          echo "Building Backend B Docker Image"
+          echo "========================================="
+
+          # Login to ACR
+          az acr login --name $(acrName)
+
+          # Build and tag the image
+          docker build -t $(acrName).azurecr.io/backend-b:latest \
+                       -t $(acrName).azurecr.io/backend-b:$(Build.BuildId) \
+                       ./backend-b
+
+          # Push both tags to ACR
+          docker push $(acrName).azurecr.io/backend-b:latest
+          docker push $(acrName).azurecr.io/backend-b:$(Build.BuildId)
+
+          echo "✅ Backend B image pushed successfully"
+          echo "   - $(acrName).azurecr.io/backend-b:latest"
+          echo "   - $(acrName).azurecr.io/backend-b:$(Build.BuildId)"
+
+# ===================================================================
+# STAGE 2: DEPLOY TO DEV - Deploy to AKS Development environment
+# ===================================================================
+- stage: DeployDev
+  displayName: 'Deploy to DEV'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: DeployToAKS
+    displayName: 'Deploy to AKS DEV'
+    environment: 'aks-dev'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            displayName: 'Get AKS Credentials'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                echo "Getting AKS credentials..."
+                az aks get-credentials \
+                  --resource-group $(aksResourceGroup) \
+                  --name $(aksClusterName) \
+                  --overwrite-existing
+
+                echo "✅ Connected to AKS cluster"
+                kubectl cluster-info
+
+          - task: Kubernetes@1
+            displayName: 'Create Namespace (if not exists)'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: $(azureSubscription)
+              azureResourceGroup: $(aksResourceGroup)
+              kubernetesCluster: $(aksClusterName)
+              command: apply
+              arguments: -f k8s-azure/01-namespace.yaml
+
+          - task: Kubernetes@1
+            displayName: 'Apply Secrets'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: $(azureSubscription)
+              azureResourceGroup: $(aksResourceGroup)
+              kubernetesCluster: $(aksClusterName)
+              command: apply
+              arguments: -f k8s-azure/02-secrets.yaml
+
+          - task: Kubernetes@1
+            displayName: 'Apply ConfigMap'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: $(azureSubscription)
+              azureResourceGroup: $(aksResourceGroup)
+              kubernetesCluster: $(aksClusterName)
+              command: apply
+              arguments: -f k8s-azure/03-configmap.yaml
+
+          - task: Kubernetes@1
+            displayName: 'Apply Services'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: $(azureSubscription)
+              azureResourceGroup: $(aksResourceGroup)
+              kubernetesCluster: $(aksClusterName)
+              command: apply
+              arguments: -f k8s-azure/04-services.yaml
+
+          - task: Kubernetes@1
+            displayName: 'Deploy Backend A'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: $(azureSubscription)
+              azureResourceGroup: $(aksResourceGroup)
+              kubernetesCluster: $(aksClusterName)
+              command: apply
+              arguments: -f k8s-azure/05-backend-a-deployment.yaml
+
+          - task: Kubernetes@1
+            displayName: 'Deploy Backend B'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: $(azureSubscription)
+              azureResourceGroup: $(aksResourceGroup)
+              kubernetesCluster: $(aksClusterName)
+              command: apply
+              arguments: -f k8s-azure/06-backend-b-deployment.yaml
+
+          - task: AzureCLI@2
+            displayName: 'Verify Deployment Status'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                echo "========================================="
+                echo "Verifying Deployment Status"
+                echo "========================================="
+
+                # Wait for deployments to be ready
+                kubectl rollout status deployment/backend-a -n $(namespace) --timeout=5m
+                kubectl rollout status deployment/backend-b -n $(namespace) --timeout=5m
+
+                echo ""
+                echo "✅ Deployment Status:"
+                kubectl get deployments -n $(namespace)
+
+                echo ""
+                echo "📦 Pod Status:"
+                kubectl get pods -n $(namespace) -l 'app in (backend-a,backend-b)'
+
+                echo ""
+                echo "🌐 Service Status:"
+                kubectl get svc -n $(namespace) -l 'app in (backend-a,backend-b)'
+
+# ===================================================================
+# STAGE 3: SMOKE TESTS - Verify deployments are healthy
+# ===================================================================
+- stage: SmokeTests
+  displayName: 'Smoke Tests'
+  dependsOn: DeployDev
+  condition: succeeded()
+  jobs:
+  - job: RunSmokeTests
+    displayName: 'Health Checks'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Run Health Checks'
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          echo "========================================="
+          echo "Running Smoke Tests"
+          echo "========================================="
+
+          # Get AKS credentials
+          az aks get-credentials \
+            --resource-group $(aksResourceGroup) \
+            --name $(aksClusterName) \
+            --overwrite-existing
+
+          # Get service external IPs
+          BACKEND_A_IP=$(kubectl get svc backend-a-service -n $(namespace) -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          BACKEND_B_IP=$(kubectl get svc backend-b-service -n $(namespace) -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+          echo "Backend A IP: $BACKEND_A_IP"
+          echo "Backend B IP: $BACKEND_B_IP"
+
+          # Wait for LoadBalancer IPs
+          if [ -z "$BACKEND_A_IP" ] || [ -z "$BACKEND_B_IP" ]; then
+            echo "⏳ Waiting for LoadBalancer IPs..."
+            sleep 30
+            BACKEND_A_IP=$(kubectl get svc backend-a-service -n $(namespace) -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            BACKEND_B_IP=$(kubectl get svc backend-b-service -n $(namespace) -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          fi
+
+          # Test Backend A health
+          echo ""
+          echo "Testing Backend A health endpoint..."
+          curl -f http://$BACKEND_A_IP:8080/health || exit 1
+          echo "✅ Backend A is healthy"
+
+          # Test Backend B health
+          echo ""
+          echo "Testing Backend B health endpoint..."
+          curl -f http://$BACKEND_B_IP:8080/health || exit 1
+          echo "✅ Backend B is healthy"
+
+          echo ""
+          echo "========================================="
+          echo "✅ All Smoke Tests Passed!"
+          echo "========================================="
+
+# ===================================================================
+# STAGE 4: POST-DEPLOYMENT - Summary and notifications
+# ===================================================================
+- stage: PostDeployment
+  displayName: 'Post-Deployment'
+  dependsOn: SmokeTests
+  condition: succeeded()
+  jobs:
+  - job: DeploymentSummary
+    displayName: 'Deployment Summary'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Print Deployment Summary'
+      inputs:
+        azureSubscription: $(azureSubscription)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          echo "========================================="
+          echo "🎉 DEPLOYMENT COMPLETE"
+          echo "========================================="
+          echo ""
+          echo "Build ID: $(Build.BuildId)"
+          echo "Build Number: $(Build.BuildNumber)"
+          echo "Deployed to: $(aksClusterName)"
+          echo "Namespace: $(namespace)"
+          echo ""
+          echo "Container Images:"
+          echo "  - $(acrName).azurecr.io/backend-a:$(Build.BuildId)"
+          echo "  - $(acrName).azurecr.io/backend-b:$(Build.BuildId)"
+          echo ""
+          echo "Access your backends via APIM:"
+          echo "  - Backend A: https://apim-capstone-dev-ari999.azure-api.net/api/A:"
+          echo "  - Backend B: https://apim-capstone-dev-ari999.azure-api.net/api/B:"
+          echo ""
+          echo "========================================="
