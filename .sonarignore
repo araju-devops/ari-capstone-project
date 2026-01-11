@@ -63,11 +63,17 @@
 **/temp/**
 **/.scannerwork/**
 
-# Reports
+# Reports - CRITICAL: Exclude all generated reports
+reports/
+**/reports/**
+owasp-zap-security-report.html
+owasp-zap-report.json
+owasp-zap-report.xml
 **/owasp-zap-*.html
 **/owasp-zap-*.json
 **/owasp-zap-*.xml
 **/policy-payload.json
+policy-payload.json
 
 # Grafana dashboards
 **/grafana-dashboards/**
