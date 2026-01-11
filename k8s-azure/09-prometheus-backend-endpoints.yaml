@@ -1,0 +1,70 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-a-external
+  namespace: monitoring
+  labels:
+    app: backend-a
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: metrics
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: backend-a-external
+  namespace: monitoring
+  labels:
+    app: backend-a
+subsets:
+- addresses:
+  - ip: 132.196.250.187
+  ports:
+  - port: 8080
+    name: metrics
+    protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-b-external
+  namespace: monitoring
+  labels:
+    app: backend-b
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: metrics
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: backend-b-external
+  namespace: monitoring
+  labels:
+    app: backend-b
+subsets:
+- addresses:
+  - ip: 68.220.237.26
+  ports:
+  - port: 8080
+    name: metrics
+    protocol: TCP

@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-additional-scrape-configs
+  namespace: monitoring
+data:
+  additional-scrape-configs.yaml: |
+    - job_name: 'backend-a-manual'
+      static_configs:
+        - targets: ['132.196.250.187:8080']
+          labels:
+            service: 'backend-a'
+            environment: 'dev'
+      metrics_path: '/metrics'
+      scrape_interval: 15s
+
+    - job_name: 'backend-b-manual'
+      static_configs:
+        - targets: ['68.220.237.26:8080']
+          labels:
+            service: 'backend-b'
+            environment: 'dev'
+      metrics_path: '/metrics'
+      scrape_interval: 15s
