@@ -89,9 +89,9 @@ resource "helm_release" "loki" {
 #   metadata {
 #     name = "security"
 #   }
-# # }
-# 
-# # resource "kubernetes_deployment" "owasp_zap" {
+# }
+#
+# resource "kubernetes_deployment" "owasp_zap" {
 #   metadata {
 #     name      = "owasp-zap"
 #     namespace = kubernetes_namespace.security.metadata[0].name
@@ -210,13 +210,13 @@ resource "helm_release" "loki" {
 #     namespace = kubernetes_namespace.security.metadata[0].name
 #   }
 #   spec {
-    selector = {
-      app = "trivy-server"
-    }
-    port {
-      port        = 8080
-      target_port = 8080
-    }
-    type = "ClusterIP"
-  }
-}
+#     selector = {
+#       app = "trivy-server"
+#     }
+#     port {
+#       port        = 8080
+#       target_port = 8080
+#     }
+#     type = "ClusterIP"
+#   }
+# }
