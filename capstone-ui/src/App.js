@@ -11,9 +11,9 @@ function App() {
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
 
   const getApiUrl = (target) => {
-    // Returns something like "https://my-apim-gateway.azure-api.net/api/A:"
-    // APIM expects uppercase paths with colon: /api/A: and /api/B:
-    return `${API_BASE_URL}/api/${target.toUpperCase()}:`;
+    // Returns something like "https://my-apim-gateway.azure-api.net/api/A:/"
+    // APIM expects uppercase paths with colon and trailing slash: /api/A:/ and /api/B:/
+    return `${API_BASE_URL}/api/${target.toUpperCase()}:/`;
   };
 
   async function uploadTo(target) {
