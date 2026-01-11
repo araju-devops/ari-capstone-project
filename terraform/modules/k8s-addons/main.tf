@@ -110,7 +110,9 @@ resource "kubernetes_deployment" "owasp_zap" {
       spec {
         container {
           name  = "owasp-zap"
-          image = "owasp/zap2docker-stable"
+          image = "zaproxy/zap-stable:latest"
+          command = ["zap.sh"]
+          args    = ["-daemon", "-host", "0.0.0.0", "-port", "8080", "-config", "api.disablekey=true", "-config", "api.addrs.addr.name=.*", "-config", "api.addrs.addr.regex=true"]
           port {
             container_port = 8080
           }
@@ -174,6 +176,8 @@ resource "kubernetes_deployment" "trivy_server" {
         container {
           name  = "trivy"
           image = "aquasec/trivy:latest"
+          command = ["trivy"]
+          args    = ["server", "--listen", "0.0.0.0:8080"]
           port {
             container_port = 8080
           }
