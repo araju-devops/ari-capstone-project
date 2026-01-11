@@ -116,12 +116,12 @@ resource "kubernetes_deployment" "owasp_zap" {
           }
           resources {
             limits = {
-              cpu    = "500m"
-              memory = "512Mi"
+              cpu    = "200m"
+              memory = "384Mi"
             }
             requests = {
-              cpu    = "250m"
-              memory = "256Mi"
+              cpu    = "50m"
+              memory = "128Mi"
             }
           }
         }
@@ -179,12 +179,12 @@ resource "kubernetes_deployment" "trivy_server" {
           }
           resources {
             limits = {
-              cpu    = "500m"
-              memory = "512Mi"
+              cpu    = "200m"
+              memory = "384Mi"
             }
             requests = {
-              cpu    = "250m"
-              memory = "256Mi"
+              cpu    = "50m"
+              memory = "128Mi"
             }
           }
         }
