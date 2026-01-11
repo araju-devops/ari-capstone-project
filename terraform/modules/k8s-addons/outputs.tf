@@ -3,16 +3,15 @@ output "argocd_namespace" {
   value       = kubernetes_namespace.argocd.metadata[0].name
 }
 
-# Monitoring and security outputs commented out (resources disabled)
-# output "monitoring_namespace" {
-#   description = "Monitoring namespace"
-#   value       = kubernetes_namespace.monitoring.metadata[0].name
-# }
+output "monitoring_namespace" {
+  description = "Monitoring namespace"
+  value       = kubernetes_namespace.monitoring.metadata[0].name
+}
 
-# output "security_namespace" {
-#   description = "Security namespace"
-#   value       = kubernetes_namespace.security.metadata[0].name
-# }
+output "security_namespace" {
+  description = "Security namespace"
+  value       = kubernetes_namespace.security.metadata[0].name
+}
 
 output "argocd_initial_password_command" {
   description = "Command to get ArgoCD initial admin password"

@@ -50,12 +50,12 @@ All pipelines are now **fixed, simplified, and ready to run!**
 
 ### Terraform Pipeline (`Terraform_Repo`)
 - **File**: `terraform/terraform-pipeline.yml`
-- **Status**: ✅ Simplified and ready
+- **Status**: ✅ Ready with full monitoring and security
 - **Deploys**:
   - Azure infrastructure (AKS, ACR, APIM, Database, Web App)
   - ArgoCD for GitOps
-  - ❌ Monitoring (Prometheus, Grafana, Loki) - DISABLED
-  - ❌ Security (OWASP ZAP, Trivy) - DISABLED
+  - ✅ Monitoring (Prometheus, Grafana, Loki) - ENABLED
+  - ✅ Security (OWASP ZAP, Trivy) - ENABLED
 
 ---
 
@@ -161,33 +161,40 @@ ari-capstone-project/
 
 ---
 
-## 📝 What's NOT Included (Simplified)
+## 📝 What's NOT Included
 
-For the **simplest setup**, these are **disabled** in terraform:
+These tools are not part of the assignment requirements:
 
-- ❌ Prometheus (monitoring)
-- ❌ Grafana (dashboards)
-- ❌ Loki (log aggregation)
-- ❌ SonarQube (code quality)
-- ❌ OWASP ZAP (security testing)
-- ❌ Trivy (vulnerability scanning)
+- ❌ SonarQube (code quality - not required)
 
-**Why?** These tools require significant resources and can cause pipeline timeouts.
-
-**To re-enable**: Uncomment the sections in `terraform/modules/k8s-addons/main.tf`
+**Note**: All assignment-required monitoring and security tools are enabled.
 
 ---
 
 ## ✅ What IS Included
 
+### Infrastructure
 - ✅ Azure Kubernetes Service (AKS)
 - ✅ Azure Container Registry (ACR)
 - ✅ Azure API Management (APIM)
 - ✅ Azure Database for PostgreSQL
 - ✅ Azure Web App (for frontend)
+
+### GitOps & Deployment
 - ✅ ArgoCD (for GitOps)
+
+### Applications
 - ✅ Backend A & B (Node.js services)
 - ✅ Frontend UI (React application)
+
+### Monitoring Stack
+- ✅ Prometheus (metrics collection)
+- ✅ Grafana (dashboards and visualization)
+- ✅ Loki (log aggregation)
+
+### Security Tools
+- ✅ OWASP ZAP (security testing)
+- ✅ Trivy (vulnerability scanning)
 
 ---
 
