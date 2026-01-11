@@ -33,3 +33,13 @@ data:
               app: 'backend-b'
         metrics_path: '/metrics'
         scrape_interval: 15s
+
+      - job_name: 'kube-state-metrics'
+        static_configs:
+          - targets: ['prometheus-kube-state-metrics.monitoring.svc.cluster.local:8080']
+        scrape_interval: 30s
+
+      - job_name: 'node-exporter'
+        static_configs:
+          - targets: ['prometheus-prometheus-node-exporter.monitoring.svc.cluster.local:9100']
+        scrape_interval: 30s
