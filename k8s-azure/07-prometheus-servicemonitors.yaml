@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-backend-scrape
+  namespace: monitoring
+data:
+  backend-scrape.yml: |
+    - job_name: 'backend-a'
+      static_configs:
+        - targets: ['backend-a-service.microservices-app.svc.cluster.local:8080']
+          labels:
+            service: 'backend-a'
+            app: 'backend-a'
+      metrics_path: '/metrics'
+      scrape_interval: 15s
+
+    - job_name: 'backend-b'
+      static_configs:
+        - targets: ['backend-b-service.microservices-app.svc.cluster.local:8080']
+          labels:
+            service: 'backend-b'
+            app: 'backend-b'
+      metrics_path: '/metrics'
+      scrape_interval: 15s
