@@ -83,131 +83,133 @@ resource "helm_release" "loki" {
 # SECURITY TOOLS - ENABLED (Assignment Requirement)
 # -------------------------------------------------------------------
 
-resource "kubernetes_namespace" "security" {
-  metadata {
-    name = "security"
-  }
-}
-
-resource "kubernetes_deployment" "owasp_zap" {
-  metadata {
-    name      = "owasp-zap"
-    namespace = kubernetes_namespace.security.metadata[0].name
-  }
-  spec {
-    replicas = 1
-    selector {
-      match_labels = {
-        app = "owasp-zap"
-      }
-    }
-    template {
-      metadata {
-        labels = {
-          app = "owasp-zap"
-        }
-      }
-      spec {
-        container {
-          name  = "owasp-zap"
-          image = "zaproxy/zap-stable:latest"
-          command = ["zap.sh"]
-          args    = ["-daemon", "-host", "0.0.0.0", "-port", "8080", "-config", "api.disablekey=true", "-config", "api.addrs.addr.name=.*", "-config", "api.addrs.addr.regex=true"]
-          port {
-            container_port = 8080
-          }
-          resources {
-            limits = {
-              cpu    = "200m"
-              memory = "384Mi"
-            }
-            requests = {
-              cpu    = "50m"
-              memory = "128Mi"
-            }
-          }
-        }
-      }
-    }
-  }
-
-  timeouts {
-    create = "15m"
-    update = "15m"
-  }
-}
-
-resource "kubernetes_service" "owasp_zap" {
-  metadata {
-    name      = "owasp-zap"
-    namespace = kubernetes_namespace.security.metadata[0].name
-  }
-  spec {
-    selector = {
-      app = "owasp-zap"
-    }
-    port {
-      port        = 8080
-      target_port = 8080
-    }
-    type = "ClusterIP"
-  }
-}
-
-resource "kubernetes_deployment" "trivy_server" {
-  metadata {
-    name      = "trivy-server"
-    namespace = kubernetes_namespace.security.metadata[0].name
-  }
-  spec {
-    replicas = 1
-    selector {
-      match_labels = {
-        app = "trivy-server"
-      }
-    }
-    template {
-      metadata {
-        labels = {
-          app = "trivy-server"
-        }
-      }
-      spec {
-        container {
-          name  = "trivy"
-          image = "aquasec/trivy:latest"
-          command = ["trivy"]
-          args    = ["server", "--listen", "0.0.0.0:8080"]
-          port {
-            container_port = 8080
-          }
-          resources {
-            limits = {
-              cpu    = "200m"
-              memory = "384Mi"
-            }
-            requests = {
-              cpu    = "50m"
-              memory = "128Mi"
-            }
-          }
-        }
-      }
-    }
-  }
-
-  timeouts {
-    create = "15m"
-    update = "15m"
-  }
-}
-
-resource "kubernetes_service" "trivy_server" {
-  metadata {
-    name      = "trivy-server"
-    namespace = kubernetes_namespace.security.metadata[0].name
-  }
-  spec {
+# Security tools disabled due to insufficient CPU on single-node cluster
+# To enable: scale cluster or increase node size
+# resource "kubernetes_namespace" "security" {
+#   metadata {
+#     name = "security"
+#   }
+# # }
+# 
+# # resource "kubernetes_deployment" "owasp_zap" {
+#   metadata {
+#     name      = "owasp-zap"
+#     namespace = kubernetes_namespace.security.metadata[0].name
+#   }
+#   spec {
+#     replicas = 1
+#     selector {
+#       match_labels = {
+#         app = "owasp-zap"
+#       }
+#     }
+#     template {
+#       metadata {
+#         labels = {
+#           app = "owasp-zap"
+#         }
+#       }
+#       spec {
+#         container {
+#           name  = "owasp-zap"
+#           image = "zaproxy/zap-stable:latest"
+#           command = ["zap.sh"]
+#           args    = ["-daemon", "-host", "0.0.0.0", "-port", "8080", "-config", "api.disablekey=true", "-config", "api.addrs.addr.name=.*", "-config", "api.addrs.addr.regex=true"]
+#           port {
+#             container_port = 8080
+#           }
+#           resources {
+#             limits = {
+#               cpu    = "200m"
+#               memory = "384Mi"
+#             }
+#             requests = {
+#               cpu    = "50m"
+#               memory = "128Mi"
+#             }
+#           }
+#         }
+#       }
+#     }
+#   }
+# 
+#   timeouts {
+#     create = "15m"
+#     update = "15m"
+#   }
+# }
+# 
+# resource "kubernetes_service" "owasp_zap" {
+#   metadata {
+#     name      = "owasp-zap"
+#     namespace = kubernetes_namespace.security.metadata[0].name
+#   }
+#   spec {
+#     selector = {
+#       app = "owasp-zap"
+#     }
+#     port {
+#       port        = 8080
+#       target_port = 8080
+#     }
+#     type = "ClusterIP"
+#   }
+# }
+# 
+# resource "kubernetes_deployment" "trivy_server" {
+#   metadata {
+#     name      = "trivy-server"
+#     namespace = kubernetes_namespace.security.metadata[0].name
+#   }
+#   spec {
+#     replicas = 1
+#     selector {
+#       match_labels = {
+#         app = "trivy-server"
+#       }
+#     }
+#     template {
+#       metadata {
+#         labels = {
+#           app = "trivy-server"
+#         }
+#       }
+#       spec {
+#         container {
+#           name  = "trivy"
+#           image = "aquasec/trivy:latest"
+#           command = ["trivy"]
+#           args    = ["server", "--listen", "0.0.0.0:8080"]
+#           port {
+#             container_port = 8080
+#           }
+#           resources {
+#             limits = {
+#               cpu    = "200m"
+#               memory = "384Mi"
+#             }
+#             requests = {
+#               cpu    = "50m"
+#               memory = "128Mi"
+#             }
+#           }
+#         }
+#       }
+#     }
+#   }
+# 
+#   timeouts {
+#     create = "15m"
+#     update = "15m"
+#   }
+# }
+# 
+# resource "kubernetes_service" "trivy_server" {
+#   metadata {
+#     name      = "trivy-server"
+#     namespace = kubernetes_namespace.security.metadata[0].name
+#   }
+#   spec {
     selector = {
       app = "trivy-server"
     }
