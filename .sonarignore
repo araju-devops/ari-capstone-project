@@ -1,0 +1,73 @@
+# SonarQube Ignore File
+# Excludes files and directories from SonarQube analysis
+
+# Dependencies
+**/node_modules/**
+**/bower_components/**
+**/.venv/**
+**/venv/**
+**/__pycache__/**
+**/*.pyc
+
+# Build outputs
+**/build/**
+**/dist/**
+**/target/**
+**/out/**
+**/.next/**
+
+# Generated files
+**/coverage/**
+**/*.min.js
+**/*.min.css
+**/*.bundle.js
+**/*.chunk.js
+**/*.map
+
+# Configuration files
+**/*.config.js
+**/webpack.config.*
+**/babel.config.*
+**/jest.config.*
+
+# Test files (if you want to exclude)
+# **/*.test.js
+# **/*.spec.js
+# **/__tests__/**
+
+# Documentation
+**/docs/**
+**/*.md
+
+# Infrastructure as Code
+**/terraform/**
+**/k8s-azure/**
+**/apim-policies/**
+
+# CI/CD
+**/.github/**
+**/.azure/**
+**/.terraform/**
+
+# IDE
+**/.vscode/**
+**/.idea/**
+**/*.swp
+**/*.swo
+
+# Logs
+**/*.log
+
+# Temporary files
+**/tmp/**
+**/temp/**
+**/.scannerwork/**
+
+# Reports
+**/owasp-zap-*.html
+**/owasp-zap-*.json
+**/owasp-zap-*.xml
+**/policy-payload.json
+
+# Grafana dashboards
+**/grafana-dashboards/**

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: owasp-zap
+  namespace: security
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: owasp-zap
+  template:
+    metadata:
+      labels:
+        app: owasp-zap
+    spec:
+      containers:
+      - name: owasp-zap
+        image: zaproxy/zap-stable:latest
+        command: ["zap.sh"]
+        args:
+          - "-daemon"
+          - "-host"
+          - "0.0.0.0"
+          - "-port"
+          - "8080"
+          - "-config"
+          - "api.disablekey=true"
+          - "-config"
+          - "api.addrs.addr.name=.*"
+          - "-config"
+          - "api.addrs.addr.regex=true"
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: "100m"
+            memory: "256Mi"
+          requests:
+            cpu: "50m"
+            memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: owasp-zap
+  namespace: security
+spec:
+  type: LoadBalancer
+  selector:
+    app: owasp-zap
+  ports:
+  - port: 8080
+    targetPort: 8080
