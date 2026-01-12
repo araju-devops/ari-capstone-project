@@ -86,7 +86,7 @@ function App() {
 
   return (
     <div className="page">
-      <h1>Ari's Multi-Backend Image Upload (Kubernetes)</h1>
+      <h1>Ari Sharma's Multi-Backend Image Upload (Kubernetes)</h1>
 
       {error && (
         <div className="error-banner" role="alert">
